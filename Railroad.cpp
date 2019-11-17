@@ -1,7 +1,6 @@
 ﻿/*********************************************************************************
 *
-*  TRABALHO FINAL
-*  AUTOMAÇÃO EM TEMPO REAL - ELT012
+*  TRABALHO FINAL AUTOMAÇÃO EM TEMPO REAL - ELT012
 *  CAMILA MARTINS E MARCELO MONTEIRO
 *
 **********************************************************************************/
@@ -22,10 +21,15 @@ typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);	//Casting para terceiro e sext
 													//_beginthreadex
 typedef unsigned* CAST_LPDWORD;
 
-#define NUM_THREADS_READ 2
+#define NUM_THREADS_READ_REMOTE 2
 #define	ESC				0x1B			// Tecla para encerrar o programa
 
-DWORD WINAPI ThreadRead(int);
+DWORD WINAPI ThreadReadRemote(int);
+DWORD WINAPI ThreadPopMessage(int);
+DWORD WINAPI ThreadHotWheel(int);
+DWORD WINAPI ThreadShowData(int);
+DWORD WINAPI ThreadShowAlarms(int);
+DWORD WINAPI Thread(int);
 
 HANDLE hMutex;							// Mutex base
 HANDLE hSem;					        // Semáforo base
@@ -37,8 +41,9 @@ int nTecla;								//Variável que armazena a tecla digitada para sair
 
 // THREAD PRIMÁRIA
 int main() {
-	HANDLE hThreadsRead[NUM_THREADS_READ];
-	DWORD dwIdFilhote;
+	HANDLE hThreadsRead[NUM_THREADS_READ_REMOTE];
+	HANDLE hThreadPop, hThreadHotWheel, hThreadShowData, hThreadShowAlarms;
+	DWORD dwIdRR, dwIdPop, dwIdHW, dwIdSD, dwIdSA;
 	DWORD dwExitCode = 0;
 	DWORD dwRet;
 	int i;
@@ -66,17 +71,17 @@ int main() {
 	// --------------------------------------------------------------------------
 
 	// Threads Leitura
-	for (i = 0; i < NUM_THREADS_READ; ++i) {
+	for (i = 0; i < NUM_THREADS_READ_REMOTE; ++i) {
 		hThreadsRead[i] = (HANDLE)_beginthreadex(
 			NULL,
 			0,
-			(CAST_FUNCTION)ThreadRead,	//Casting necess�rio
+			(CAST_FUNCTION)ThreadReadRemote,	//Casting necess�rio
 			(LPVOID)i,
 			0,
-			(CAST_LPDWORD)&dwIdFilhote);		//Casting necess�rio
+			(CAST_LPDWORD)&dwIdRR);		//Casting necess�rio
 		if (hThreadsRead[i]) {
 			SetConsoleTextAttribute(hOut, WHITE);
-			printf("Thread leitura %d criado com Id=%0x\n", i, dwIdFilhote);
+			printf("Thread leitura %d criado com Id=%0x\n", i, dwIdRR);
 		}
 		else {
 			SetConsoleTextAttribute(hOut, WHITE);
@@ -100,19 +105,20 @@ int main() {
 	// Aguarda término das threads e encerra programa
 	// --------------------------------------------------------------------------
 
-	dwRet = WaitForMultipleObjects(NUM_THREADS_READ, hThreadsRead, TRUE, INFINITE);
+	dwRet = WaitForMultipleObjects(NUM_THREADS_READ_REMOTE, hThreadsRead, TRUE, INFINITE);
 	CheckForError(dwRet == WAIT_OBJECT_0);
 
 	// Fecha todos os handles de objetos do kernel
-	for (int i = 0; i < NUM_THREADS_READ; ++i)
+	for (int i = 0; i < NUM_THREADS_READ_REMOTE; ++i)
 		CloseHandle(hThreadsRead[i]);
 	//for
 
+	SetConsoleTextAttribute(hOut, WHITE);
 	return EXIT_SUCCESS;
 
 }//main
 
-DWORD WINAPI ThreadRead(int i) {
+DWORD WINAPI ThreadReadRemote(int i) {
 
 	DWORD status;
 	LONG dwContagemPrevia;
