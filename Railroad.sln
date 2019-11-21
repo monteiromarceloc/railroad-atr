@@ -3,11 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.29509.3
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Teclado", "..\Teclado\Teclado.vcxproj", "{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Teclado", ".\Teclado\Teclado.vcxproj", "{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Railroad", "Railroad.vcxproj", "{AE9B1854-7F2D-4BC6-821C-D67103F239F2}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Railroad", ".\Railroad\Railroad.vcxproj", "{AE9B1854-7F2D-4BC6-821C-D67103F239F2}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Detectores", "..\Detectores\Detectores.vcxproj", "{124B9E6F-D09D-41A7-9260-EDD5CABF7C12}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Detectores", ".\Detectores\Detectores.vcxproj", "{124B9E6F-D09D-41A7-9260-EDD5CABF7C12}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -16,15 +16,7 @@ Global
 		Release|x64 = Release|x64
 		Release|x86 = Release|x86
 	EndGlobalSection
-	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x64.ActiveCfg = Debug|Win32
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x64.Build.0 = Debug|Win32
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x86.ActiveCfg = Debug|Win32
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x86.Build.0 = Debug|Win32
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x64.ActiveCfg = Release|x64
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x64.Build.0 = Release|x64
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x86.ActiveCfg = Release|Win32
-		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x86.Build.0 = Release|Win32
+	GlobalSection(ProjectConfigurationPlatforms) = postSolutionw
 		{AE9B1854-7F2D-4BC6-821C-D67103F239F2}.Debug|x64.ActiveCfg = Debug|Win32
 		{AE9B1854-7F2D-4BC6-821C-D67103F239F2}.Debug|x64.Build.0 = Debug|Win32
 		{AE9B1854-7F2D-4BC6-821C-D67103F239F2}.Debug|x86.ActiveCfg = Debug|Win32
@@ -33,6 +25,14 @@ Global
 		{AE9B1854-7F2D-4BC6-821C-D67103F239F2}.Release|x64.Build.0 = Release|x64
 		{AE9B1854-7F2D-4BC6-821C-D67103F239F2}.Release|x86.ActiveCfg = Release|Win32
 		{AE9B1854-7F2D-4BC6-821C-D67103F239F2}.Release|x86.Build.0 = Release|Win32
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x64.ActiveCfg = Debug|Win32
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x64.Build.0 = Debug|Win32
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x86.ActiveCfg = Debug|Win32
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Debug|x86.Build.0 = Debug|Win32
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x64.ActiveCfg = Release|x64
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x64.Build.0 = Release|x64
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x86.ActiveCfg = Release|Win32
+		{B933A878-D4DE-4A03-95F2-CF3B92FEBE82}.Release|x86.Build.0 = Release|Win32
 		{124B9E6F-D09D-41A7-9260-EDD5CABF7C12}.Debug|x64.ActiveCfg = Debug|Win32
 		{124B9E6F-D09D-41A7-9260-EDD5CABF7C12}.Debug|x64.Build.0 = Debug|Win32
 		{124B9E6F-D09D-41A7-9260-EDD5CABF7C12}.Debug|x86.ActiveCfg = Debug|Win32
