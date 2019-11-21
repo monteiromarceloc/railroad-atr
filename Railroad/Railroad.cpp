@@ -16,6 +16,7 @@
 using namespace std;
 
 #define TAM_LISTA 200
+#define TAM_ARQUIVO 500
 #define TAM_MSG 41
 
 #define WHITE   FOREGROUND_RED   | FOREGROUND_GREEN | FOREGROUND_BLUE
@@ -26,7 +27,7 @@ typedef unsigned (WINAPI* CAST_FUNCTION)(LPVOID);	//Casting para terceiro e sext
 													//_beginthreadex
 typedef unsigned* CAST_LPDWORD;
 
-#define NUM_THREADS_READ_REMOTE 2
+#define NUM_THREADS_LEITURA 2
 #define	ESC	0x1B									// Tecla para encerrar o programa
 
 DWORD WINAPI ThreadLeitura(int);
@@ -41,14 +42,16 @@ HANDLE hMutex;							// Mutex base
 HANDLE hSem;					        // Semáforo base
 HANDLE hEventBlockRead;					// Evento de sinalização de bloqueio da tarefa de leitura
 HANDLE hEventEnd;						// Evento de sinalização de término
-HANDLE hEventTime;						// Evento para temporizadores tmeout (nunca será sinalizado)
+HANDLE hEventTime;						// Evento para temporizadores timeout (nunca será sinalizado)
+HANDLE hEventRetirada;					// Evento para ativar e desativar a thread retirada 
+HANDLE hEventLeitura;					// Evento para ativar e desativar a thread leitura 
 HANDLE PosNova;
 HANDLE hOut;							// Handle para a saída da console
 
 char Mensagens[TAM_LISTA][TAM_MSG];					// Lista circular em memória
 HANDLE hMutexNSEQ;									// Mutex para NSEQ
 HANDLE hMutexPos;
-int NSEQ, PosLivres, PosDepositar, PosRetirar;
+int NSEQ, PosLivres, PosDepositar, PosRetirar, PosLivresArquivo;
 
 SYSTEMTIME timestamp;
 
@@ -58,7 +61,7 @@ void gerarAlfaNumAleatorio(char* alfa, int len);
 
 // THREAD PRIMÁRIA
 int main() {
-	HANDLE hThreadsRead[NUM_THREADS_READ_REMOTE];
+	HANDLE hThreadsRead[NUM_THREADS_LEITURA];
 	HANDLE hThreadPull;
 	DWORD dwIdRR, dwIdPop, dwIdHW, dwIdSD, dwIdSA;
 	DWORD dwExitCode = 0;
@@ -91,13 +94,17 @@ int main() {
 	CheckForError(hMutexNSEQ);
 	PosNova = CreateEvent(NULL, FALSE, FALSE, "PosNova"); //Evento de nova posição
 	CheckForError(PosNova);
+	hEventLeitura = OpenEvent(EVENT_ALL_ACCESS, FALSE, "LeituraDadosON-OFF");
+	CheckForError(hEventLeitura);
+	hEventRetirada = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaDadosON-OFF");
+	CheckForError(hEventRetirada);
 
 	// --------------------------------------------------------------------------
 	// Criação de threads
 	// --------------------------------------------------------------------------
 
 	// Threads Leitura
-	for (i = 0; i < NUM_THREADS_READ_REMOTE; ++i) {
+	for (i = 0; i < NUM_THREADS_LEITURA; ++i) {
 		hThreadsRead[i] = (HANDLE)_beginthreadex(
 			NULL,
 			0,
@@ -139,20 +146,25 @@ int main() {
 	// Aguarda término das threads e encerra programa
 	// --------------------------------------------------------------------------
 
-	dwRet = WaitForMultipleObjects(NUM_THREADS_READ_REMOTE, hThreadsRead, TRUE, INFINITE);
+	dwRet = WaitForMultipleObjects(NUM_THREADS_LEITURA, hThreadsRead, TRUE, INFINITE);
 	CheckForError(dwRet == WAIT_OBJECT_0);
 
 	// Fecha todos os handles de objetos do kernel
-	for (int i = 0; i < NUM_THREADS_READ_REMOTE; ++i)
+	for (int i = 0; i < NUM_THREADS_LEITURA; ++i)
 		CloseHandle(hThreadsRead[i]);
 	//for
 
 	CloseHandle(hMutexNSEQ);
 	CloseHandle(hEventEnd);
 	CloseHandle(hEventBlockRead);
+	CloseHandle(PosNova);
+	CloseHandle(hEventLeitura);
+	CloseHandle(hEventRetirada);
 
 	SetConsoleTextAttribute(hOut, WHITE);
 	return EXIT_SUCCESS;
+
+	CloseHandle(hMutex);
 
 }//main
 
@@ -164,32 +176,30 @@ DWORD WINAPI ThreadLeitura(int i) {
 	char auxMensagem[TAM_MSG];
 	DWORD status, ret;
 	LONG dwContagemPrevia;
-	int REMOTA, DIAG, ID_PARTE2, ESTADO, TIMESTAMP;
+	int REMOTA,DIAG,ID_PARTE2,ESTADO,TIMESTAMP;
 	char ID_PARTE1[3];
 
-	GetLocalTime(&timestamp);
-
 	do {
-
 		// temporizador
 		hEventTime = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut");
 		status = WaitForSingleObject(hEventTime, 500);
 		if (status == WAIT_TIMEOUT) {
 
 			// gerar mensagem
+			// PQ ESTÁ FICANDO COM OS MESMOS VALORES SEMPRE?
 			WaitForSingleObject(hMutexNSEQ, INFINITE);
-			NSEQ++;
-			if (NSEQ == 1000000) NSEQ = 1;
+				NSEQ++;
+				if (NSEQ == 1000000) NSEQ = 1;
+				GetLocalTime(&timestamp);
+				REMOTA = (rand() % 2);
+				DIAG = (rand() % 1000);
+				gerarAlfaNumAleatorio(ID_PARTE1, 3);
+				ID_PARTE2 = (rand() % 1000);
+				ESTADO = (rand() % 2);
+				sprintf(auxMensagem, "%07d;55;%02d;%03d;%s-%04d;%d;%02d:%02d:%02d", NSEQ, REMOTA, DIAG, ID_PARTE1, ID_PARTE2, ESTADO, timestamp.wHour, timestamp.wMinute, timestamp.wSecond);
+				SetConsoleTextAttribute(hOut, HLRED);
+				printf("Thread Leitura %d gerou a mensagem: %s.\n", i, auxMensagem);
 			ReleaseMutex(hMutexNSEQ);
-
-			REMOTA = (rand() % 2);
-			DIAG = (rand() % 1000);
-			gerarAlfaNumAleatorio(ID_PARTE1, 3);
-			ID_PARTE2 = (rand() % 1000);
-			ESTADO = (rand() % 2);
-			sprintf(auxMensagem, "%07d;55;%02d;%03d;%s-%04d;%d;%02d:%02d:%02d", NSEQ, REMOTA, DIAG, ID_PARTE1, ID_PARTE2, ESTADO, timestamp.wHour, timestamp.wMinute, timestamp.wSecond);
-			SetConsoleTextAttribute(hOut, HLRED);
-			printf("Thread Leitura %d gerou a mensagem: %s.\n", i, auxMensagem);
 
 			// verificar se há posição livre na lista
 			WaitForSingleObject(hMutexPos, INFINITE);
@@ -225,21 +235,74 @@ DWORD WINAPI ThreadRetirada() {
 	SetConsoleTextAttribute(hOut, HLGREEN);
 	printf("Thread de Retirada de Mensagens iniciando execucao...\n");
 
-	char auxMensagem[TAM_MSG];
-	DWORD status, ret;
-	LONG dwContagemPrevia;
+	HANDLE hEventDados = CreateEvent(NULL, TRUE, FALSE, "CriarMailslotDados");
+	HANDLE hEventMailslotDados = CreateEvent(NULL, TRUE, FALSE, "MailslotDadosEVENTO");
+	HANDLE hMailslot;
+	DWORD dwBytesEnviados, status;
+	char buffer[TAM_MSG];
+
+	//SetEvent(hEventDados);
+	//WaitForSingleObject(hEventMailslotDados, INFINITE);
+
+	hMailslot = CreateFile(
+		"\\\\.\\mailslot\\MailslotDados",
+		GENERIC_WRITE,
+		FILE_SHARE_READ,
+		NULL,
+		OPEN_EXISTING,
+		FILE_ATTRIBUTE_NORMAL,
+		NULL);
 
 	do {
-		SetConsoleTextAttribute(hOut, HLGREEN);
-		printf("Thread de Retirada de Mensagens iniciando loop...\n");
-		Sleep(200);
+
+		hEventTime = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut");
+		status = WaitForSingleObject(hEventTime, 200);
+		if (status == WAIT_TIMEOUT) {
+
+			WaitForSingleObject(hMutexPos, INFINITE);
+			SetConsoleTextAttribute(hOut, HLGREEN);
+			if (PosLivres < 200) {			 // Lista não está vazia
+				printf("PosLivres: %d\n", PosLivres);
+				strcpy(buffer, Mensagens[PosRetirar]);
+				PosLivres++;
+				if (PosLivres <= 1) {
+					PulseEvent(PosNova);
+				}
+				printf("5");
+				SetConsoleTextAttribute(hOut, HLGREEN);
+				printf("Thread Retirada obteve a mensagem: %s.\n", buffer);
+				WriteFile(hMailslot, &buffer, 41, &dwBytesEnviados, NULL);
+				PosRetirar++;
+				if (PosRetirar >= TAM_LISTA) {
+					PosRetirar = 0;
+				}
+				// ENVIAR MENSAGEM PARA OUTRA TAREFA
+				// Fazer esse cara ser circular
+			}
+			else {
+				if (PosLivres >= 200) {
+					SetConsoleTextAttribute(hOut, HLGREEN);
+					printf("Thread Retirada encontrou a lista vazia.\n");
+				}
+			}
+			ReleaseMutex(hMutexPos);
+		}
+		else {
+			// não deve cair aqui.
+			SetConsoleTextAttribute(hOut, HLRED);
+			printf("Erro no temporizador da Thread Retirada.\n");
+		}
 	} while (nTecla != ESC);
+
+	CloseHandle(hEventDados);
+	CloseHandle(hEventMailslotDados);
+	CloseHandle(hMailslot);
 
 	SetConsoleTextAttribute(hOut, HLGREEN);
 	printf("Thread de Retirada de Mensagens encerrando execucao.\n");
 	_endthreadex(0);
 	return(0);
-}//ThreadLeitura
+}//ThreadRetirada
 
 //função que gera sequencias alfanumericas aleatorias
 void gerarAlfaNumAleatorio(char* alfa, int len) {
