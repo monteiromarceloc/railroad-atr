@@ -136,3 +136,28 @@ DWORD WINAPI ThreadReadRemote(int i) {
 	_endthreadex(0);
 	return(0);
 }//ThreadFilhote
+
+//função que gera numeros inteiros aleatorios
+int gerarNumeroAleatorioInteiro(int digit) {
+	int y = pow(10, digit);
+	int x = rand() % y;
+	return x;
+}
+
+//função que gera numeros reais aleatorios 
+float gerarNumeroAleatorioReal(int digit) {
+	float y = pow(10.0, digit - 2);
+	float x = fmod(rand(), (y));
+	float z = (rand() % 10) / 10.0;
+	x = x + z;
+	return x;
+}
+
+//função que gera sequencias alfanumericas aleatorias
+void gerarAlfaNumAleatorio(char* alfa, int len) {
+	char charSet[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+	for (int i = 0; i < len; i++) {
+		alfa[i] = charSet[rand() % (sizeof(charSet) - 1)];
+	}
+	alfa[len] = 0;
+}
