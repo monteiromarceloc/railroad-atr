@@ -13,8 +13,10 @@
 #include <process.h>						//_beginthreadex() e _endthreadex()
 #include <conio.h>							//_getch
 #include "CheckForError.h"
-
 using namespace std;
+
+#define TAM_LISTA 200
+#define TAM_MSG 41
 
 #define WHITE   FOREGROUND_RED   | FOREGROUND_GREEN | FOREGROUND_BLUE
 #define HLGREEN FOREGROUND_GREEN | FOREGROUND_INTENSITY
@@ -27,7 +29,8 @@ typedef unsigned* CAST_LPDWORD;
 #define NUM_THREADS_READ_REMOTE 2
 #define	ESC	0x1B									// Tecla para encerrar o programa
 
-DWORD WINAPI ThreadReadRemote(int);
+DWORD WINAPI ThreadLeitura(int);
+DWORD WINAPI ThreadRetirada();
 //DWORD WINAPI ThreadPopMessage(int);
 //DWORD WINAPI ThreadHotWheel(int);
 //DWORD WINAPI ThreadShowData(int);
@@ -39,15 +42,14 @@ HANDLE hSem;					        // Semáforo base
 HANDLE hEventBlockRead;					// Evento de sinalização de bloqueio da tarefa de leitura
 HANDLE hEventEnd;						// Evento de sinalização de término
 HANDLE hEventTime;						// Evento para temporizadores tmeout (nunca será sinalizado)
+HANDLE PosNova;
 HANDLE hOut;							// Handle para a saída da console
 
-typedef struct {						// Estrutura de dados para a lista circular
-	char conteudo[41];
-}Dados;
+char Mensagens[TAM_LISTA][TAM_MSG];					// Lista circular em memória
+HANDLE hMutexNSEQ;									// Mutex para NSEQ
+HANDLE hMutexPos;
+int NSEQ, PosLivres, PosDepositar, PosRetirar;
 
-Dados Mensagens[200];								// Lista circular em memória
-HANDLE hMutexNSEQ;							// Mutex para NSEQ
-int NSEQ;
 SYSTEMTIME timestamp;
 
 int nTecla;								//Variável que armazena a tecla digitada para sair
@@ -57,10 +59,15 @@ void gerarAlfaNumAleatorio(char* alfa, int len);
 // THREAD PRIMÁRIA
 int main() {
 	HANDLE hThreadsRead[NUM_THREADS_READ_REMOTE];
-	HANDLE hThreadPop, hThreadHotWheel, hThreadShowData, hThreadShowAlarms;
+	HANDLE hThreadPull;
 	DWORD dwIdRR, dwIdPop, dwIdHW, dwIdSD, dwIdSA;
 	DWORD dwExitCode = 0;
 	DWORD dwRet;
+	NSEQ = 0;
+	PosLivres = TAM_LISTA;
+	PosDepositar = 0;
+	PosRetirar = 0;
+
 	int i;
 
 	// --------------------------------------------------------------------------
@@ -70,18 +77,20 @@ int main() {
 	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
 	if (hOut == INVALID_HANDLE_VALUE)
 		SetConsoleTextAttribute(hOut, WHITE);
-		printf("Erro ao obter handle para a saída da console\n");
+	printf("Erro ao obter handle para a saída da console\n");
 
 	// --------------------------------------------------------------------------
 	//  Cria objetos de sincronização
 	// --------------------------------------------------------------------------
 
-	hEventBlockRead = CreateEvent(NULL, TRUE, FALSE, "BlockEvento"); //Evento de reset manual
+	hEventBlockRead = CreateEvent(NULL, TRUE, FALSE, "BlockEvento"); //Evento de 
 	CheckForError(hEventBlockRead);
-	hEventEnd = CreateEvent(NULL, TRUE, FALSE, "EscEvento"); //Evento de reset manual
+	hEventEnd = CreateEvent(NULL, TRUE, FALSE, "EndEvento"); //Evento de saída
 	CheckForError(hEventEnd);
 	hMutexNSEQ = CreateMutex(NULL, FALSE, "NumSequencial");
 	CheckForError(hMutexNSEQ);
+	PosNova = CreateEvent(NULL, FALSE, FALSE, "PosNova"); //Evento de nova posição
+	CheckForError(PosNova);
 
 	// --------------------------------------------------------------------------
 	// Criação de threads
@@ -92,7 +101,7 @@ int main() {
 		hThreadsRead[i] = (HANDLE)_beginthreadex(
 			NULL,
 			0,
-			(CAST_FUNCTION)ThreadReadRemote,	//Casting necess�rio
+			(CAST_FUNCTION)ThreadLeitura,	//Casting necess�rio
 			(LPVOID)i,
 			0,
 			(CAST_LPDWORD)&dwIdRR);		//Casting necess�rio
@@ -106,6 +115,14 @@ int main() {
 			exit(0);
 		}
 	}//for
+
+	hThreadPull = (HANDLE)_beginthreadex(
+		NULL,
+		0,
+		(CAST_FUNCTION)ThreadRetirada,	//Casting necess�rio
+		(LPVOID)0,
+		0,
+		(CAST_LPDWORD)&dwIdRR);
 
 
 	// --------------------------------------------------------------------------
@@ -139,15 +156,15 @@ int main() {
 
 }//main
 
-DWORD WINAPI ThreadReadRemote(int i) {
+DWORD WINAPI ThreadLeitura(int i) {
 
 	SetConsoleTextAttribute(hOut, HLRED);
 	printf("Thread de leitura %d iniciando execucao...\n", i);
 
-	char auxMensagem[41];
+	char auxMensagem[TAM_MSG];
 	DWORD status, ret;
 	LONG dwContagemPrevia;
-	int REMOTA,DIAG,ID_PARTE2,ESTADO,TIMESTAMP;
+	int REMOTA, DIAG, ID_PARTE2, ESTADO, TIMESTAMP;
 	char ID_PARTE1[3];
 
 	GetLocalTime(&timestamp);
@@ -175,10 +192,22 @@ DWORD WINAPI ThreadReadRemote(int i) {
 			printf("Thread Leitura %d gerou a mensagem: %s.\n", i, auxMensagem);
 
 			// verificar se há posição livre na lista
-			// bloquear-se ou
-			// adicionar à lista
+			WaitForSingleObject(hMutexPos, INFINITE);
+			if (PosLivres <= 0) {
+				SetConsoleTextAttribute(hOut, WHITE);
+				printf("A lista circular em memoria esta cheia. Thread Leitura %d aguarda posição livre.\n", i);
+				WaitForSingleObject(PosNova, INFINITE);
+			}
+			PosLivres--;
+			strcpy(Mensagens[PosDepositar], auxMensagem);
+			PosDepositar++;
+			if (PosDepositar >= TAM_LISTA) {
+				PosDepositar = 0;
+			}
+			ReleaseMutex(hMutexPos);
 
-		} else{
+		}
+		else {
 			// não deve cair aqui.
 			SetConsoleTextAttribute(hOut, HLRED);
 			printf("Erro no temporizador da Thread Leitura %d.\n", i);
@@ -189,23 +218,28 @@ DWORD WINAPI ThreadReadRemote(int i) {
 	printf("Thread Leitura %d encerrando execucao.\n", i);
 	_endthreadex(0);
 	return(0);
-}//ThreadFilhote
+}//ThreadLeitura
 
-//função que gera numeros inteiros aleatorios
-int gerarNumeroAleatorioInteiro(int digit) {
-	int y = pow(10, digit);
-	int x = rand() % y;
-	return x;
-}
+DWORD WINAPI ThreadRetirada() {
 
-//função que gera numeros reais aleatorios 
-float gerarNumeroAleatorioReal(int digit) {
-	float y = pow(10.0, digit - 2);
-	float x = fmod(rand(), (y));
-	float z = (rand() % 10) / 10.0;
-	x = x + z;
-	return x;
-}
+	SetConsoleTextAttribute(hOut, HLGREEN);
+	printf("Thread de Retirada de Mensagens iniciando execucao...\n");
+
+	char auxMensagem[TAM_MSG];
+	DWORD status, ret;
+	LONG dwContagemPrevia;
+
+	do {
+		SetConsoleTextAttribute(hOut, HLGREEN);
+		printf("Thread de Retirada de Mensagens iniciando loop...\n");
+		Sleep(200);
+	} while (nTecla != ESC);
+
+	SetConsoleTextAttribute(hOut, HLGREEN);
+	printf("Thread de Retirada de Mensagens encerrando execucao.\n");
+	_endthreadex(0);
+	return(0);
+}//ThreadLeitura
 
 //função que gera sequencias alfanumericas aleatorias
 void gerarAlfaNumAleatorio(char* alfa, int len) {
