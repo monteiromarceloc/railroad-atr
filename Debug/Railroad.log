@@ -1,4 +1,0 @@
-﻿  Railroad.cpp
-C:\Users\IEUser\Documents\railroad-atr\Railroad.cpp(118,8): warning C4101: 'status': unreferenced local variable
-C:\Users\IEUser\Documents\railroad-atr\Railroad.cpp(119,7): warning C4101: 'dwContagemPrevia': unreferenced local variable
-  Railroad.vcxproj -> C:\Users\IEUser\Documents\railroad-atr\Debug\Railroad.exe
