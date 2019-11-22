@@ -102,9 +102,6 @@
   <ItemGroup>
     <ClCompile Include="Railroad.cpp" />
   </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="CheckForError.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

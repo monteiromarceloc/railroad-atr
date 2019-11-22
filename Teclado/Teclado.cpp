@@ -21,7 +21,7 @@ HANDLE h2Event;			// Handle para Evento Leitura Remota 2 on/off
 HANDLE hhEvent;			// Handle para Evento Leitura dos Detectores de Roda Quente on/off
 HANDLE hrEvent;			// Handle para Evento Retirada de Mensagens on/off
 HANDLE hsEvent;			// Handle para Evento Exibicao de Dados de Sinalização Ferroviária on/off
-HANDLE haEvent;			// Handle para Evento Exibicao de Alarmes on/off
+HANDLE haEvent;			// Handle para Evento Exibicao de Alarmes on/offNewProcess
 HANDLE hEscEvent;		// Handle para Evento Encerrar demais tarefas
 
 int main() {
@@ -29,7 +29,7 @@ int main() {
 	int nTecla;
 
 	STARTUPINFO si;					// StartUpInformation para novo processo 
-	PROCESS_INFORMATION NewProcess, DadosProcess, OPProcess, AlarmeProcess;	// Informações sobre os novos processos criados 
+	PROCESS_INFORMATION ListaProcess, DetectoresProcess, ExibicaoProcess;	// Informações sobre os novos processos criados 
 
 	ZeroMemory(&si, sizeof(si));
 	si.cb = sizeof(si);				// Tamanho da estrutura em bytes
@@ -43,7 +43,7 @@ int main() {
 	hEscEvent = CreateEvent(NULL, TRUE, FALSE, "EncerraTarefas");
 
 	CreateProcess(
-		"..\\Debug\\Controle De Dados.exe",
+		"..\\Debug\\Listas.exe",
 		NULL,	// linha de comando
 		NULL,	// atributos de segurança: Processo
 		NULL,	// atributos de segurança: Thread
@@ -51,47 +51,36 @@ int main() {
 		//CREATE_NEW_CONSOLE,	
 		NORMAL_PRIORITY_CLASS,	// CreationFlags
 		NULL,	// lpEnvironment
-		"..\\Controle de Dados",
+		"..\\Lista de dados",
 		&si,			// lpStartUpInfo
-		&NewProcess);	// lpProcessInformation
+		&ListaProcess);	// lpProcessInformation
 
 	CreateProcess(
-		"..\\Debug\\Exibicao de Dados.exe",
+		"..\\Debug\\Detectores.exe",
 		NULL,	// linha de comando
 		NULL,	// atributos de segurança: Processo
 		NULL,	// atributos de segurança: Thread
 		FALSE,	// herança de handles
 		CREATE_NEW_CONSOLE,
 		NULL,	// lpEnvironment
-		"..\\Exibicao de Dados",
+		"..\\Detectores de roda quente",
 		&si,			// lpStartUpInfo
-		&DadosProcess);	// lpProcessInformation
+		&DetectoresProcess);	// lpProcessInformation
 
 	CreateProcess(
-		"..\\Debug\\Exibicao de OPs.exe",
+		"..\\Debug\\Exibicao.exe",
 		NULL,	// linha de comando
 		NULL,	// atributos de segurança: Processo
 		NULL,	// atributos de segurança: Thread
 		FALSE,	// herança de handles
 		CREATE_NEW_CONSOLE,
 		NULL,	// lpEnvironment
-		"..\\Exibicao de Ops",
+		"..\\Exibicao de dados",
 		&si,			// lpStartUpInfo
-		&OPProcess);	// lpProcessInformation
+		&ExibicaoProcess);	// lpProcessInformation
 
-	CreateProcess(
-		"..\\Debug\\Exibicao de Alarmes.exe",
-		NULL,	// linha de comando
-		NULL,	// atributos de segurança: Processo
-		NULL,	// atributos de segurança: Thread
-		FALSE,	// herança de handles
-		CREATE_NEW_CONSOLE,
-		NULL,	// lpEnvironment
-		"..\\Exibicao de Alarmes",
-		&si,			// lpStartUpInfo
-		&AlarmeProcess);	// lpProcessInformation
 
-	HANDLE EndProcess[4] = { NewProcess.hProcess, DadosProcess.hProcess, OPProcess.hProcess, AlarmeProcess.hProcess };
+	HANDLE EndProcess[3] = { ListaProcess.hProcess, DetectoresProcess.hProcess, ExibicaoProcess.hProcess };
 
 	do {
 		printf("Tecle uma acao valida para gerar evento ou <Esc> para terminar\n");
@@ -115,17 +104,14 @@ int main() {
 	CloseHandle(haEvent);
 	CloseHandle(hEscEvent);
 
-	CloseHandle(NewProcess.hProcess);
-	CloseHandle(NewProcess.hThread);
+	CloseHandle(ListaProcess.hProcess);
+	CloseHandle(ListaProcess.hThread);
 
-	CloseHandle(DadosProcess.hProcess);
-	CloseHandle(DadosProcess.hThread);
+	CloseHandle(DetectoresProcess.hProcess);
+	CloseHandle(DetectoresProcess.hThread);
 
-	CloseHandle(OPProcess.hProcess);
-	CloseHandle(OPProcess.hThread);
-
-	CloseHandle(AlarmeProcess.hProcess);
-	CloseHandle(AlarmeProcess.hThread);
+	CloseHandle(ExibicaoProcess.hProcess);
+	CloseHandle(ExibicaoProcess.hThread);
 
 	printf("\nAcione uma tecla para terminar\n");
 	_getch();
