@@ -78,7 +78,7 @@ int main()
 		GetMailslotInfo(hMailslotDados, &MaxMsgSize, &NextMsgSize, &MsgCont, &Timeout);
 
 		if (MsgCont == 0) {}
-		else if (MsgCont > 0) 
+		else if (MsgCont > 0)
 		{
 
 			bStatus = ReadFile(hMailslotDados, &MsgBuffer, 42, &dwBytesLidos, NULL);
@@ -86,7 +86,7 @@ int main()
 				error = GetLastError();
 			//Imprime as mensagens*/
 			Buffer = MsgBuffer;
-			
+
 
 			for (int i = 29; i < 41; i++) { cout << Buffer[i]; }
 			cout << "  NSEQ: ";
@@ -94,7 +94,7 @@ int main()
 			cout << " REMOTA: ";
 			for (int i = 11; i < 13; i++) { cout << Buffer[i]; }
 			cout << " FALHA DE HARDWARE ";
-			
+
 		}
 	} while (nTipoEvento != 1);
 
@@ -140,7 +140,7 @@ int main()
 				error = GetLastError();
 			//Imprime as mensagens*/
 			Buffer2 = MsgBuffer2;
-			
+
 
 			for (int i = 22; i < 29; i++) { cout << Buffer2[i]; }
 			cout << "  NSEQ: ";
@@ -158,7 +158,7 @@ int main()
 	CloseHandle(hEventMailslotDados);
 	CloseHandle(hMailslotDados);
 	CloseHandle(Events);
-	CloseHandle(hEventDetectores);		
+	CloseHandle(hEventDetectores);
 	CloseHandle(hEventMailslotDetectores);
 	CloseHandle(hMailslotDetectores);
 
