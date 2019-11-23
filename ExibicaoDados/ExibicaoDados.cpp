@@ -48,7 +48,7 @@ int main()
 	WaitForSingleObject(hEventDados, INFINITE);
 
 	hMailslotDados = CreateMailslot(
-		"\\.\\mailslot\\MailslotDados",
+		"\\\\.\\mailslot\\MailslotDados",
 		0,
 		MAILSLOT_WAIT_FOREVER,
 		NULL);

@@ -11,7 +11,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExibicaoAlarme", "..\Exibic
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExibicaoDados", "..\ExibicaoDados\ExibicaoDados.vcxproj", "{C32058DB-1D94-4C22-9D1C-5825ED6E056D}"
 EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ControleLista", "..\ControleLista\ControleLista.vcxproj", "{D8A3EF02-0B0F-40B6-8F1A-E179BA5A5AB0}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Teclado", "..\Teclado\Teclado.vcxproj", "{D8A3EF02-0B0F-40B6-8F1A-E179BA5A5AB0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
