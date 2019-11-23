@@ -34,14 +34,15 @@ DWORD WINAPI ThreadRetirada();
 HANDLE hOut;							// Handle para a saída da console
 HANDLE hEventEnd;						// Evento de sinalização de término
 HANDLE hEventRetirada;					// Evento para ativar e desativar a thread retirada 
-HANDLE hEventLeitura;					// Evento para ativar e desativar a thread leitura 
+HANDLE hEventLeitura1;					// Evento para ativar e desativar a thread leitura 
+HANDLE hEventLeitura2;					// Evento para ativar e desativar a thread leitura 
 HANDLE hEventTime;						// Evento para temporizadores timeout (nunca será sinalizado)
 HANDLE PosNova;							// Evento para posição liberada
 HANDLE hMutexNSEQ;						// Mutex para NSEQ
 HANDLE hMutexPos;						// Mutex para variáveis de posição
 
 int NSEQ, PosLivres, PosDepositar, PosRetirar, PosLivresArquivo;
-bool EnableLeitura;
+bool EnableLeitura1, EnableLeitura2;
 
 char Mensagens[TAM_LISTA][TAM_MSG];					// Lista circular em memória
 SYSTEMTIME timestamp;
@@ -52,7 +53,7 @@ void gerarAlfaNumAleatorio(char* alfa, int len);
 int main() {
 	HANDLE hThreadsRead[NUM_THREADS_LEITURA];
 	HANDLE hThreadPull;
-	HANDLE Events[2] = { hEventLeitura, hEventEnd };
+	HANDLE Events[3] = { hEventEnd, hEventLeitura1, hEventLeitura2 };
 	DWORD dwIdRR, dwIdPop, dwIdHW, dwIdSD, dwIdSA;
 	DWORD dwExitCode = 0;
 	DWORD dwRet, ret;
@@ -61,7 +62,7 @@ int main() {
 	PosLivres = TAM_LISTA;
 	PosDepositar = 0;
 	PosRetirar = 0;
-	EnableLeitura = TRUE;
+	EnableLeitura1 = TRUE;
 
 	int i;
 
@@ -70,25 +71,28 @@ int main() {
 	// --------------------------------------------------------------------------
 
 	hOut = GetStdHandle(STD_OUTPUT_HANDLE);
-	if (hOut == INVALID_HANDLE_VALUE)
+	if (hOut == INVALID_HANDLE_VALUE) {
 		SetConsoleTextAttribute(hOut, WHITE);
-	printf("Erro ao obter handle para a saída da console\n");
+		printf("Erro ao obter handle para a saída da console\n");
+	}
 
 	// --------------------------------------------------------------------------
 	//  Cria objetos de sincronização
 	// --------------------------------------------------------------------------
 
 	// TODO: Mudar para OpenEvent depois que ele for criado pelo teclado
-	hEventEnd = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EndEvento"); //Evento de encerramento da thread de leitura
-	CheckForError(hEventEnd);
-	hEventLeitura = OpenEvent(EVENT_ALL_ACCESS, FALSE, "LeituraDadosON-OFF"); // Evento toggle da thread de Leitura
-	CheckForError(hEventLeitura);
-	hEventRetirada = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaDadosON-OFF");
-	CheckForError(hEventRetirada);
+	hEventEnd = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EncerraTarefas"); //Evento de encerramento da thread de leitura
+	//CheckForError(hEventEnd);
+	hEventLeitura1 = OpenEvent(EVENT_ALL_ACCESS, FALSE, "Leitura1ON-OFF"); // Evento toggle da thread de Leitura
+	//CheckForError(hEventLeitura1);
+	hEventLeitura2 = OpenEvent(EVENT_ALL_ACCESS, FALSE, "Leitura2ON-OFF"); // Evento toggle da thread de Leitura
+	//CheckForError(hEventLeitura2);
+	hEventRetirada = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaMensagensON-OFF");
+	//CheckForError(hEventRetirada);
 	hMutexNSEQ = CreateMutex(NULL, FALSE, "NumSequencial");
-	CheckForError(hMutexNSEQ);
+	//CheckForError(hMutexNSEQ);
 	PosNova = CreateEvent(NULL, FALSE, FALSE, "PosNova"); //Evento de nova posição
-	CheckForError(PosNova);
+	//CheckForError(PosNova);
 
 
 	// --------------------------------------------------------------------------
@@ -127,47 +131,44 @@ int main() {
 	// --------------------------------------------------------------------------
 	// Leitura do teclado
 	// --------------------------------------------------------------------------
-	
-	SetConsoleTextAttribute(hOut, WHITE);
-	printf("Tecle <Esc> para terminar\n");
 
 	do {
-		
-		ret = WaitForMultipleObjects(2, Events, FALSE, INFINITE);
+		ret = WaitForMultipleObjects(3, Events, FALSE, INFINITE);
 		nTipoEvento = ret - WAIT_OBJECT_0;
-		if (nTipoEvento == 0) {
-			ResetEvent(hEventLeitura);
+		if (ret != -1) {
 			SetConsoleTextAttribute(hOut, WHITE);
-			printf("Threads Leitura: OFF\n");
-			EnableLeitura = FALSE;
-			ret = WaitForMultipleObjects(2, Events, FALSE, INFINITE);
-			nTipoEvento = ret - WAIT_OBJECT_0;
-			if (nTipoEvento == 0) {
-				ResetEvent(hEventLeitura);
-				SetConsoleTextAttribute(hOut, WHITE);
-				printf("Threads Leitura: ON\n");
-				EnableLeitura = TRUE;
-			}
-			else if (nTipoEvento == 1) {
-				break;
-			}
+			printf("Tipo: %d \n", ret);
 		}
-		else if (nTipoEvento == 1) { break; }
-		nTecla = _getch();
-	} while (nTipoEvento != 1 && nTecla != ESC);
+		if (nTipoEvento == 0) { break; }
+		else if (nTipoEvento == 1) {
+			ResetEvent(hEventLeitura1);
+			EnableLeitura1 = !EnableLeitura1;
+			SetConsoleTextAttribute(hOut, WHITE);
+			printf("Thread Leitura1: %s\n", EnableLeitura1 ? "ON" : "OFF");
+		}
+		else if (nTipoEvento == 2) {
+			ResetEvent(hEventLeitura1);
+			EnableLeitura2 = !EnableLeitura2;
+			SetConsoleTextAttribute(hOut, WHITE);
+			printf("Thread Leitura2: %s\n", EnableLeitura2 ? "ON" : "OFF");
+		}
+	} while (nTipoEvento != 0);
 
 	// --------------------------------------------------------------------------
 	// Aguarda término das threads e encerra programa
 	// --------------------------------------------------------------------------
 
 	dwRet = WaitForMultipleObjects(NUM_THREADS_LEITURA, hThreadsRead, TRUE, INFINITE);
-	CheckForError(dwRet == WAIT_OBJECT_0);
+	//CheckForError(dwRet == WAIT_OBJECT_0);
+	dwRet = WaitForSingleObject(hThreadPull, INFINITE);
+	//CheckForError(dwRet == WAIT_OBJECT_0);
 
 	for (int i = 0; i < NUM_THREADS_LEITURA; ++i)
 		CloseHandle(hThreadsRead[i]);
 
 	CloseHandle(hEventEnd);
-	CloseHandle(hEventLeitura);
+	CloseHandle(hEventLeitura1);
+	CloseHandle(hEventLeitura2);
 	CloseHandle(hEventRetirada);
 	CloseHandle(hMutexNSEQ);
 	CloseHandle(PosNova);
@@ -185,14 +186,15 @@ DWORD WINAPI ThreadLeitura(int i) {
 	char auxMensagem[TAM_MSG];
 	DWORD status, ret;
 	LONG dwContagemPrevia;
-	int REMOTA,DIAG,ID_PARTE2,ESTADO,TIMESTAMP;
+	int REMOTA, DIAG, ID_PARTE2, ESTADO, TIMESTAMP;
 	char ID_PARTE1[3];
 
 	do {
-		if (EnableLeitura) {
+		if (EnableLeitura1) {
 			// temporizador
 			hEventTime = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut");
-			status = WaitForSingleObject(hEventTime, 500);
+			status = WaitForSingleObject(hEventTime, 2000);
+
 			if (status == WAIT_TIMEOUT) {
 				// GERAR MENSAGEM
 				// TO DO: PQ ESTÁ FICANDO COM OS MESMOS VALORES SEMPRE?
@@ -205,9 +207,9 @@ DWORD WINAPI ThreadLeitura(int i) {
 				gerarAlfaNumAleatorio(ID_PARTE1, 3);
 				ID_PARTE2 = (rand() % 1000);
 				ESTADO = (rand() % 2);
-				sprintf(auxMensagem, "%07d;55;%02d;%03d;%s-%04d;%d;%02d:%02d:%02d", NSEQ, REMOTA, DIAG, ID_PARTE1, ID_PARTE2, ESTADO, timestamp.wHour, timestamp.wMinute, timestamp.wSecond);
-				SetConsoleTextAttribute(hOut, HLRED);
-				printf("Thread Leitura %d gerou a mensagem: %s.\n", i, auxMensagem);
+				sprintf_s(auxMensagem, "%07d;55;%02d;%03d;%s-%04d;%d;%02d:%02d:%02d", NSEQ, REMOTA, DIAG, ID_PARTE1, ID_PARTE2, ESTADO, timestamp.wHour, timestamp.wMinute, timestamp.wSecond);
+				//SetConsoleTextAttribute(hOut, HLRED);
+				//printf("Thread Leitura %d gerou a mensagem: %s.\n", i, auxMensagem);
 				ReleaseMutex(hMutexNSEQ);
 
 				// verificar se há posição livre na lista
@@ -218,7 +220,7 @@ DWORD WINAPI ThreadLeitura(int i) {
 					WaitForSingleObject(PosNova, INFINITE);
 				}
 				PosLivres--;
-				strcpy(Mensagens[PosDepositar], auxMensagem);
+				strcpy_s(Mensagens[PosDepositar], auxMensagem);
 				PosDepositar++;
 				if (PosDepositar >= TAM_LISTA) {
 					PosDepositar = 0;
@@ -266,21 +268,20 @@ DWORD WINAPI ThreadRetirada() {
 	do {
 
 		hEventTime = CreateEvent(NULL, TRUE, FALSE, "EvTimeOut");
-		status = WaitForSingleObject(hEventTime, 200);
+		status = WaitForSingleObject(hEventTime, 2000);
 		if (status == WAIT_TIMEOUT) {
 
 			WaitForSingleObject(hMutexPos, INFINITE);
 			SetConsoleTextAttribute(hOut, HLGREEN);
 			if (PosLivres < 200) {			 // Lista não está vazia
-				printf("PosLivres: %d\n", PosLivres);
-				strcpy(buffer, Mensagens[PosRetirar]);
+				//printf("PosLivres: %d\n", PosLivres);
+				strcpy_s(buffer, Mensagens[PosRetirar]);
 				PosLivres++;
 				if (PosLivres <= 1) {
 					PulseEvent(PosNova);
 				}
-				printf("5");
-				SetConsoleTextAttribute(hOut, HLGREEN);
-				printf("Thread Retirada obteve a mensagem: %s.\n", buffer);
+				//SetConsoleTextAttribute(hOut, HLGREEN);
+				//printf("Thread Retirada obteve a mensagem: %s.\n", buffer);
 				WriteFile(hMailslot, &buffer, 41, &dwBytesEnviados, NULL);
 				PosRetirar++;
 				if (PosRetirar >= TAM_LISTA) {
