@@ -14,7 +14,7 @@ void cabecalho() {
 }
 
 HANDLE hsEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ExibicaoDadosON-OFF");
-HANDLE hEscEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EscEvento");
+HANDLE hEscEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EncerraTarefas");
 
 
 int main()

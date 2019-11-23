@@ -31,7 +31,7 @@ DWORD WINAPI ThreadDetectora();
 DWORD WINAPI ThreadRetirada();
 
 HANDLE hOut;							// Handle para a saída da console
-HANDLE hEventEnd;						// Evento de sinalização de término
+HANDLE hEscEvent;						// Evento de sinalização de término
 HANDLE hEventRetirada;					// Evento para ativar e desativar a thread retirada 
 HANDLE hEventDetect;					// Evento para ativar e desativar a thread leitura 
 HANDLE hEventTime;						// Evento para temporizadores timeout (nunca será sinalizado)
@@ -51,7 +51,7 @@ void gerarAlfaNumAleatorio(char* alfa, int len);
 int main() {
 
 	HANDLE hThreadDetec;
-	HANDLE Events[2] = { hEventDetect, hEventEnd };
+	HANDLE Events[2] = { hEventDetect, hEscEvent };
 	DWORD dwIdRR, dwIdPop, dwIdHW, dwIdSD, dwIdSA;
 	DWORD dwExitCode = 0;
 	DWORD dwRet, ret;
@@ -78,7 +78,7 @@ int main() {
 	// --------------------------------------------------------------------------
 
 	// TODO: Mudar para OpenEvent depois que ele for criado pelo teclado
-	hEventEnd = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EndEvento"); //Evento de encerramento da thread de leitura
+	hEscEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EncerraTarefas"); //Evento de encerramento da thread de leitura
 	hEventDetect = OpenEvent(EVENT_ALL_ACCESS, FALSE, "LeituraDetectoresON-OFF"); // Evento toggle da thread de Leitura
 	hMutexNSEQ2 = CreateMutex(NULL, FALSE, "NumSequencial");
 	//PosNova = CreateEvent(NULL, FALSE, FALSE, "PosNova"); //Evento de nova posição
@@ -135,7 +135,7 @@ int main() {
 	dwRet = WaitForSingleObject(hThreadDetec, INFINITE);
 
 	CloseHandle(hThreadDetec);
-	CloseHandle(hEventEnd);
+	CloseHandle(hEscEvent);
 	CloseHandle(hEventDetect);
 	CloseHandle(hEventRetirada);
 	CloseHandle(hMutexNSEQ2);
