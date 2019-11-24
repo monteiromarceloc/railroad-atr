@@ -104,17 +104,29 @@ int main() {
 	do {
 		printf("Tecle uma acao valida para gerar evento ou <Esc> para terminar\n");
 		nTecla = _getch();
-		if (nTecla == d) SetEvent(hdEvent);			// Gera 1 evento
-		if (nTecla == p) SetEvent(hpEvent);			// Gera 1 evento
-		if (nTecla == o) SetEvent(hoEvent);			// Gera 1 evento
-		if (nTecla == a) SetEvent(haEvent);			// Gera 1 evento
-		if (nTecla == s) SetEvent(hsEvent);			// Gera 1 evento
-		if (nTecla == e) SetEvent(heEvent);			// Gera 1 evento
-		if (nTecla == w) SetEvent(hwEvent);			// Gera 1 evento
-		if (nTecla == c) SetEvent(hcEvent);			// Gera 1 evento
-		else if (nTecla == ESC) SetEvent(hEscEvent);	// Termina processos
+		if (nTecla == d) SetEvent(hdEvent);			// ComunicacaoDadosON
+		if (nTecla == p) SetEvent(hpEvent);			// RetiradaDadosON
+		if (nTecla == o) SetEvent(hoEvent);			// RetiradaOPsON
+		if (nTecla == a) SetEvent(haEvent);			// RetiradaAlarmesON
+		if (nTecla == s) SetEvent(hsEvent);			// ExibicaoDadosON
+		if (nTecla == e) SetEvent(heEvent);			// ExibicaoOPsON
+		if (nTecla == w) SetEvent(hwEvent);			// ExibicaoAlarmesON
+		if (nTecla == c) SetEvent(hcEvent);			// ClearAlarmes
+		else if (nTecla == ESC) SetEvent(hEscEvent);	// EscEvento
 	} while (nTecla != ESC);
 	
+
+	hdEvent = CreateEvent(NULL, TRUE, FALSE, "ComunicacaoDadosON-OFF");
+	hpEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaDadosON-OFF");
+	hoEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaOPsON-OFF");
+	haEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaAlarmesON-OFF");
+	hsEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoDadosON-OFF");
+	heEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoOPsON-OFF");
+	hwEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoAlarmesON-OFF");
+	hcEvent = CreateEvent(NULL, TRUE, FALSE, "ClearAlarmes");
+	hEscEvent = CreateEvent(NULL, TRUE, FALSE, "EscEvento");
+
+
 	WaitForMultipleObjects(4, EndProcess, TRUE, INFINITE);
 	
 	CloseHandle(hdEvent);

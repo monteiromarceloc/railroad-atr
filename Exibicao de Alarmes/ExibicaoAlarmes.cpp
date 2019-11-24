@@ -1,11 +1,11 @@
-#define WIN32_LEAN_AND_MEAN
+Ôªø#define WIN32_LEAN_AND_MEAN
 #include <windows.h>
 #include <iostream>
 #include <sstream>
 #include <iomanip>
 #include <stdlib.h>
 
-#define TAM_ALARM 30
+#define TAM_ALARM 41
 
 using namespace std; 
 
@@ -21,7 +21,7 @@ HANDLE hcEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ClearAlarmes");
 HANDLE hEscEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EscEvento");
 
 int main(){
-	/*-----------DeclaraÁ„o de vari·veis internas------------*/
+	/*-----------Declara√ß√£o de vari√°veis internas------------*/
 
 	char MsgBuffer[TAM_ALARM];			//msg a receber pelo maislots
 	string Buffer, aux;				//Buffers de armazenamento
@@ -29,7 +29,7 @@ int main(){
 
 	HANDLE Events[3] = { hwEvent, hEscEvent, hcEvent };
 
-	HANDLE hEventAlarme = OpenEvent(EVENT_ALL_ACCESS, FALSE, "CriarArquivoAlarme");		// Handle para sinalizaÁ„o de criacao de arquivo
+	HANDLE hEventAlarme = OpenEvent(EVENT_ALL_ACCESS, FALSE, "CriarArquivoAlarme");		// Handle para sinaliza√ß√£o de criacao de arquivo
 	HANDLE hAlarme = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ArquivoCriado");				// Sinalizacao: arquivo criado
 	HANDLE hArqMutex = OpenMutex(MUTEX_ALL_ACCESS, FALSE, "MutexArquivo");
 	HANDLE semaphore = OpenSemaphore(SEMAPHORE_ALL_ACCESS, FALSE, "SemaforoArquivoCheio");
@@ -49,7 +49,7 @@ int main(){
 	HANDLE hFile = CreateFile("..\\Alarme\\Alarmes.arq",
 		GENERIC_READ | GENERIC_WRITE,
 		FILE_SHARE_READ | FILE_SHARE_WRITE,		// abre para leitura e escrita
-		NULL,									// atributos de seguranÁa
+		NULL,									// atributos de seguran√ßa
 		CREATE_ALWAYS,							// cria novo arquivo
 		FILE_ATTRIBUTE_NORMAL,
 		NULL);

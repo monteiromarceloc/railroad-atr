@@ -4,8 +4,9 @@
 #include <sstream>
 #include <iomanip>
 
-
 using namespace std;
+
+#define TAM_MSG 30
 
 //Impressão do cabeçalho de paginas
 void cabecalho() {
@@ -21,7 +22,7 @@ int main()
 {
 	/*-----------Declaração de variáveis internas------------*/
 
-	char MsgBuffer[41];			//msg a receber pelo maislots
+	char MsgBuffer[TAM_MSG];			//msg a receber pelo maislots
 	string Buffer;				//Buffers de armazenamento
 	
 	HANDLE hEventDados;			//Handle para evento de sinalização de MailSlot
@@ -76,7 +77,7 @@ int main()
 		
 		if (MsgCont == 0) {}
 		else if (MsgCont > 0) {
-			bStatus = ReadFile(hMailslot, &MsgBuffer, 41, &dwBytesLidos, NULL);
+			bStatus = ReadFile(hMailslot, &MsgBuffer, TAM_MSG, &dwBytesLidos, NULL);
 			if (!bStatus)
 				error = GetLastError();
 			//Imprime as mensagens
