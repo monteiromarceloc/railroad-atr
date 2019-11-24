@@ -83,7 +83,6 @@ int main() {
 	hMutexNSEQ2 = CreateMutex(NULL, FALSE, "NumSequencial");
 	//PosNova = CreateEvent(NULL, FALSE, FALSE, "PosNova"); //Evento de nova posição
 
-
 	// --------------------------------------------------------------------------
 	// Criação de threads
 	// --------------------------------------------------------------------------
