@@ -19,18 +19,19 @@ typedef unsigned (WINAPI *CAST_FUNCTION)(LPVOID);	// Casting para terceiro e sex
 typedef unsigned *CAST_LPDWORD;						// _beginthreadex
 
 	
-DWORD WINAPI RetiradaDados();					    // Thread representando a TAREFA DE RETIRADA DE DADOS DO PROCESSO
+DWORD WINAPI DetectoraRodaQuente();					    // Thread representando a TAREFA DE RETIRADA DE DADOS DO PROCESSO
 DWORD WINAPI RetiradaOP();							// Thread representando a TAREFA DE RETIRADA DE ORDENS DE PRODUÇÃO
-DWORD WINAPI RetiradaAlarmes();						// Thread representando a TAREFA DE RETIRADA DE ALARMES
+DWORD WINAPI RetiradaMensagens();						// Thread representando a TAREFA DE RETIRADA DE ALARMES
 
-void CALLBACK DepositaDados(PVOID, BOOLEAN);	    // Rotina callback para o depósito dos dados do processo
+void CALLBACK DepositaMensagens2(PVOID, BOOLEAN);	    // Rotina callback para o depósito dos dados do processo
 void CALLBACK DepositaOP(PVOID, BOOLEAN);			// Rotina callback para o depósito das OP's
-void CALLBACK DepositaAlarmes(PVOID, BOOLEAN);		// Rotina callback para o depósito dos alarmes
+void CALLBACK DepositaMensagens1(PVOID, BOOLEAN);		// Rotina callback para o depósito dos alarmes
 
 HANDLE hTimerQueue;
 HANDLE hTimer1, hTimer2, hTimer3;
 HANDLE hTimerEvent;
 HANDLE hMutex;										// Permite acesso exclusicvo a queue contendo os valores de posições livres
+HANDLE hMutexNSEQ;										// Permite acesso exclusicvo a queue contendo os valores de posições livres
 
 typedef struct {									// Estrutura de dados que armazenara os conteúdos colocado na lista circular em memoria,
 	char *conteudo;									// será alocado dinamicamente 
@@ -50,9 +51,9 @@ int NSEQ3 = 0;										// NSEQ referente as OPs
 SYSTEMTIME tempo1, tempo2, tempo3;
 
 HANDLE hdEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ComunicacaoDadosON-OFF");
-HANDLE hpEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaDadosON-OFF");
+HANDLE hpEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "DetectoraRodaQuenteON-OFF");
 HANDLE hoEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaOPsON-OFF");
-HANDLE haEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaAlarmesON-OFF");
+HANDLE haEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "RetiradaMensagensON-OFF");
 HANDLE hEscEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EscEvento");
 
 HANDLE PosNova = CreateEvent(NULL, FALSE, FALSE, "PosNova");			// Evento para sinalizar uma posicao, para quando
@@ -89,11 +90,12 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 	}
 
 	hMutex = CreateMutex(NULL, FALSE, "Posicoes_Livres");
+	hMutexNSEQ = CreateMutex(NULL, FALSE, "Numeros_Sequenciais");
 
 	hThreads[0] = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)RetiradaDados,	// casting necessário
+		(CAST_FUNCTION)DetectoraRodaQuente,	// casting necessário
 		(LPVOID)0,
 		0,
 		(CAST_LPDWORD)&dwIdDadosProcesso	// cating necessário
@@ -111,7 +113,7 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 	hThreads[2] = (HANDLE)_beginthreadex(
 		NULL,
 		0,
-		(CAST_FUNCTION)RetiradaAlarmes,	// casting necessário
+		(CAST_FUNCTION)RetiradaMensagens,	// casting necessário
 		(LPVOID)2,
 		0,
 		(CAST_LPDWORD)&dwIdOP	// cating necessário
@@ -119,14 +121,14 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 
 	HANDLE Threads[3] = { hThreads[0], hThreads[1], hThreads[2] };
 
-	status = CreateTimerQueueTimer(&hTimer1, hTimerQueue, (WAITORTIMERCALLBACK)DepositaDados,
+	status = CreateTimerQueueTimer(&hTimer1, hTimerQueue, (WAITORTIMERCALLBACK)DepositaMensagens2,
 		NULL, 500, 500, WT_EXECUTEDEFAULT);
 	if(!status){
 		cout << "Erro em CreateTimerQueueTimer [1]! Codigo = " << GetLastError();
 		return 0;
 	}
 
-	status = CreateTimerQueueTimer(&hTimer2, hTimerQueue, (WAITORTIMERCALLBACK)DepositaAlarmes,
+	status = CreateTimerQueueTimer(&hTimer2, hTimerQueue, (WAITORTIMERCALLBACK)DepositaMensagens1,
 		NULL, 500, 500, WT_EXECUTEDEFAULT);
 	if (!status) {
 		cout << "Erro em CreateTimerQueueTimer [2]! Codigo = " << GetLastError() << endl;
@@ -139,10 +141,12 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 		cout << "Erro em CreateTimerQueueTimer [3]! Codigo = " << GetLastError() << endl;
 		return 0;
 	}
-
+	
 	do {
+		
 		ret = WaitForMultipleObjects(2, Events, FALSE, INFINITE);
 		nTipoEvento = ret - WAIT_OBJECT_0;
+		
 		if (nTipoEvento == 0) {
 			ResetEvent(hdEvent);
 			cout << "Tarefa de comunicacao de dados: OFF" << endl;
@@ -154,9 +158,9 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 			if (nTipoEvento == 0) {
 				ResetEvent(hdEvent);
 				cout << "Tarefa de comunicacao de dados: ON" << endl;
-				CreateTimerQueueTimer(&hTimer1, hTimerQueue, (WAITORTIMERCALLBACK)DepositaDados,
+				CreateTimerQueueTimer(&hTimer1, hTimerQueue, (WAITORTIMERCALLBACK)DepositaMensagens2,
 					NULL, 1000, 500, WT_EXECUTEDEFAULT);
-				CreateTimerQueueTimer(&hTimer2, hTimerQueue, (WAITORTIMERCALLBACK)DepositaAlarmes,
+				CreateTimerQueueTimer(&hTimer2, hTimerQueue, (WAITORTIMERCALLBACK)DepositaMensagens1,
 					NULL, 1000, 1000, WT_EXECUTEDEFAULT);
 				CreateTimerQueueTimer(&hTimer3, hTimerQueue, (WAITORTIMERCALLBACK)DepositaOP,
 					NULL, 1000, SetTemporizador, WT_EXECUTEDEFAULT);
@@ -172,6 +176,7 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 	WaitForMultipleObjects(3, hThreads, TRUE, INFINITE);
 
 	CloseHandle(hMutex);
+	CloseHandle(hMutexNSEQ);
 	CloseHandle(hdEvent);
 	CloseHandle(hpEvent);
 	CloseHandle(hoEvent);
@@ -182,14 +187,13 @@ int main()		// Thread primária - representa a TAREFA DE COMUNICAÇÃO DE DADOS
 	for (i = 0; i < 3; i++) {
 		CloseHandle(hThreads[i]);
 	}
-	
 	if (!DeleteTimerQueueEx(hTimerQueue, NULL))
 		cout << "Falha em DeleteTimerQueue! Codigo = " << GetLastError() << endl;
 
 	return EXIT_SUCCESS;
 }
 
-DWORD WINAPI RetiradaDados() {	
+DWORD WINAPI DetectoraRodaQuente() {	
 	
 	int ID, ESTADO, auxiliar, nTipoEvento, posicao_livre=0;
 	char buffer[TAM_MSG];
@@ -281,7 +285,7 @@ DWORD WINAPI RetiradaDados() {
 	return(0);
 }
 
-DWORD WINAPI RetiradaAlarmes() {
+DWORD WINAPI RetiradaMensagens() {
 	int auxiliar, nTipoEvento;
 	char buffer[TAM_ALARM];
 	DWORD ret, dwBytesEnviados;
@@ -442,105 +446,13 @@ DWORD WINAPI RetiradaOP() {
 	return(0);
 }
 
-void CALLBACK DepositaDados(PVOID nTimerID, BOOLEAN TimerOrWaitFired)
-{/*
-	int ESTADO,ID, posicao_livre = 0;
-	char buffer[TAM_MSG];
-
-	int auxiliar, nTipoEvento;
-	DWORD ret;
-
-	HANDLE hEventDados = CreateEvent(NULL, TRUE, FALSE, "CriarMailslotDados");
-	HANDLE hEventMailslotDados = CreateEvent(NULL, TRUE, FALSE, "MailslotDadosEVENTO");
-	HANDLE hMailslot;
-	HANDLE Events[2] = { hpEvent, hEscEvent };
-	DWORD dwBytesEnviados;
-
-	SetEvent(hEventDados);
-	WaitForSingleObject(hEventMailslotDados, INFINITE);
-
-	hMailslot = CreateFile(
-		"\\\\.\\mailslot\\MailslotDados",
-		GENERIC_WRITE,
-		FILE_SHARE_READ,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL);
-
-	do {
-		ret = WaitForMultipleObjects(2, Events, FALSE, 2000);
-		nTipoEvento = ret - WAIT_OBJECT_0;
-		if (nTipoEvento == 0) {
-			ResetEvent(hpEvent);
-			cout << "Tarefa de retirada de dados: OFF" << endl;
-			ret = WaitForMultipleObjects(2, Events, FALSE, INFINITE);
-			nTipoEvento = ret - WAIT_OBJECT_0;
-			if (nTipoEvento == 0) { ResetEvent(hpEvent); cout << "Tarefa de retirada de dados: ON" << endl; }
-			else if (nTipoEvento == 1)	break;
-		}
-		else if (nTipoEvento == 1) {
-			break;
-		}
-
-		GetLocalTime(&tempo2);
-		NSEQ2++;
-		if (NSEQ2 == 1000000) NSEQ2 = 1;
-		ID = (rand() % 10000);
-		ESTADO = (rand() % 4 == 3 ? 1 : 0);
-		sprintf(buffer, "%06d;00;%04d;%d;%02d:%02d:%02d", NSEQ2, ID, ESTADO, tempo2.wHour, tempo2.wMinute, tempo2.wSecond);
-
-		auxiliar = sizeof(buffer);
-
-		WaitForSingleObject(hMutex, INFINITE);
-		if (PosLivres.empty()) {
-			;
-			cout << "A lista circular em memoria esta cheia. Tarefa Comunicacao de Dados bloqueada. Aguardando posicao livre." << endl;
-			WaitForSingleObject(PosNova, INFINITE);
-		}
-
-		posicao_livre = PosLivres.front();
-		PosLivres.pop();
-		ReleaseMutex(hMutex);
-
-		Mensagens[posicao_livre].conteudo = new char[auxiliar];
-		strcpy(Mensagens[posicao_livre].conteudo, buffer);
-		PosOcupadaDados.push(posicao_livre);
-
-		if (!PosOcupadaDados.empty()) {
-			auxiliar = PosOcupadaDados.front();
-			PosOcupadaDados.pop();
-			strcpy(buffer, Mensagens[auxiliar].conteudo);
-
-			delete[]  Mensagens[auxiliar].conteudo;
-
-			if (PosLivres.empty()) {
-				PosLivres.push(auxiliar);
-				PulseEvent(PosNova);
-			}
-			else if (!PosLivres.empty())
-				PosLivres.push(auxiliar);
-
-
-			WriteFile(hMailslot, &buffer, TAM_MSG, &dwBytesEnviados, NULL);
-			//ENVIAR MENSAGEM PARA OUTRA TAREFA
-		}
-	} while (nTipoEvento != 1);
-
-	CloseHandle(Events);
-	CloseHandle(hEventDados);
-	CloseHandle(hEventMailslotDados);
-	CloseHandle(hMailslot);
-
-	*/
-};
-
-void CALLBACK DepositaAlarmes(PVOID nTimerID, BOOLEAN TimerOrWaitFired)
+void CALLBACK DepositaMensagens2(PVOID nTimerID, BOOLEAN TimerOrWaitFired)
 {
 	char buffer[TAM_ALARM];
 	int ID, ESTADO, REMOTA, DIAG, posicao_livre = 0, auxiliar;
 	char* ID1;
 
+	WaitForSingleObject(hMutexNSEQ, INFINITE);
 	GetLocalTime(&tempo1);
 	NSEQ1++;
 	if (NSEQ1 == 1000000) NSEQ1 = 1;
@@ -551,6 +463,43 @@ void CALLBACK DepositaAlarmes(PVOID nTimerID, BOOLEAN TimerOrWaitFired)
 	ESTADO = (rand() % 2);
 
 	sprintf(buffer, "%07d;55;%02d;%03d;ID;%d;%02d:%02d:%02d", NSEQ1, REMOTA, DIAG, ESTADO, tempo1.wHour, tempo1.wMinute, tempo1.wSecond);
+	ReleaseMutex(hMutexNSEQ);
+
+	auxiliar = sizeof(buffer);
+
+	WaitForSingleObject(hMutex, INFINITE);
+	if (PosLivres.empty()) {
+		cout << "A lista circular em memoria esta cheia. Tarefa Comunicacao de Dados bloqueada. Aguardando posicao livre." << endl;
+		WaitForSingleObject(PosNova, INFINITE);
+	}
+
+	posicao_livre = PosLivres.front();
+	PosLivres.pop();
+	ReleaseMutex(hMutex);
+
+	Mensagens[posicao_livre].conteudo = new char[auxiliar];
+	strcpy(Mensagens[posicao_livre].conteudo, buffer);
+	PosOcupadaAlarmes.push(posicao_livre);
+};
+
+void CALLBACK DepositaMensagens1(PVOID nTimerID, BOOLEAN TimerOrWaitFired)
+{
+	char buffer[TAM_ALARM];
+	int ID, ESTADO, REMOTA, DIAG, posicao_livre = 0, auxiliar;
+	char* ID1;
+
+	WaitForSingleObject(hMutexNSEQ, INFINITE);
+	GetLocalTime(&tempo1);
+	NSEQ1++;
+	if (NSEQ1 == 1000000) NSEQ1 = 1;
+	REMOTA = (rand() % 2);
+	DIAG = (rand() % 1000);
+	//gerarAlfaNumAleatorio(ID_PARTE1, 3);
+	//ID_PARTE2 = (rand() % 1000);
+	ESTADO = (rand() % 2);
+
+	sprintf(buffer, "%07d;55;%02d;%03d;ID;%d;%02d:%02d:%02d", NSEQ1, REMOTA, DIAG, ESTADO, tempo1.wHour, tempo1.wMinute, tempo1.wSecond);
+	ReleaseMutex(hMutexNSEQ);
 
 
 	auxiliar = sizeof(buffer);

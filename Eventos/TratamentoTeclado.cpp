@@ -43,10 +43,10 @@ int main() {
 	hdEvent = CreateEvent(NULL, TRUE, FALSE, "ComunicacaoDadosON-OFF");
 	hpEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaDadosON-OFF");
 	hoEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaOPsON-OFF");
-	haEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaAlarmesON-OFF");
+	haEvent = CreateEvent(NULL, TRUE, FALSE, "RetiradaMensagensON-OFF");
 	hsEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoDadosON-OFF");
 	heEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoOPsON-OFF");
-	hwEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoAlarmesON-OFF");
+	hwEvent = CreateEvent(NULL, TRUE, FALSE, "ExibicaoMensagensON-OFF");
 	hcEvent = CreateEvent(NULL, TRUE, FALSE, "ClearAlarmes");
 	hEscEvent = CreateEvent(NULL, TRUE, FALSE, "EscEvento");
 

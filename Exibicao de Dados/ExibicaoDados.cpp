@@ -10,7 +10,7 @@ using namespace std;
 
 //Impressão do cabeçalho de paginas
 void cabecalho() {
-	printf("\n     PAINEL DE EXIBICAO DADOS DE PROCESSO   \n\n");
+	printf("\n     SALA DE CONTROLE - ALERTAS   \n\n");
 	printf("------------------------------------------------\n");
 
 }//cabecalho*/
@@ -40,7 +40,7 @@ int main()
 
 	HANDLE Events[2] = {hsEvent, hEscEvent};
 
-	SetConsoleTitle(TEXT("Console de Dados de Processo"));
+	SetConsoleTitle(TEXT("Console de Alertas"));
 
 	//Criação de MailSlot servidor
 

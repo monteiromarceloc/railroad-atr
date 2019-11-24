@@ -10,13 +10,13 @@
 using namespace std; 
 
 void cabecalho() {
-	printf("\n     PAINEL DE EXIBICAO ALARMES   \n\n");
+	printf("\n     SALA DE CONTROLE - MENSAGENS   \n\n");
 	printf("------------------------------------------------\n");
 
 }//cabecalho*/
 
 
-HANDLE hwEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ExibicaoAlarmesON-OFF");
+HANDLE hwEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ExibicaoMensagensON-OFF");
 HANDLE hcEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "ClearAlarmes");
 HANDLE hEscEvent = OpenEvent(EVENT_ALL_ACCESS, FALSE, "EscEvento");
 
@@ -43,7 +43,7 @@ int main(){
 	int nTipoEvento;
 	int posLeituraArquivo = 0;
 
-	SetConsoleTitle(TEXT("Console de Alarmes"));
+	SetConsoleTitle(TEXT("Console de Mensagens"));
 
 	WaitForSingleObject(hEventAlarme, INFINITE);
 	HANDLE hFile = CreateFile("..\\Alarme\\Alarmes.arq",
