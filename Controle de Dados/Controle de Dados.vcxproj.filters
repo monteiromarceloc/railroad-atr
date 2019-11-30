@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Detectores.cpp">
+    <ClCompile Include="ControleDados.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
